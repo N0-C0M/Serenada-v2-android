@@ -1,0 +1,8 @@
+//
+// Created by n on 14.09.2025.
+//
+
+#ifndef APPSCREAMER_OBFUSCATE_H
+#define APPSCREAMER_OBFUSCATE_H
+
+#endif //APPSCREAMER_OBFUSCATE_H

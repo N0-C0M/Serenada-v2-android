@@ -1,0 +1,321 @@
+package wrapper;
+import android.view.MotionEvent;
+import android.content.Context;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import android.widget.Toast;
+import java.io.InputStreamReader;
+
+public class Touch
+{
+	Context thiz;
+	float accelerationX, accelerationY, brakesX, brakesY;
+	float accelerationWidth, accelerationHeight, brakesWidth, brakesHeight;
+	
+	public Touch(Context ctx)
+	{
+		thiz = ctx;
+		
+		File file = new File(/*thiz.getExternalFilesDir(null).getAbsolutePath() + */"/storage/emulated/0/Android/data/com.br.top/files/touchscreen-custom.json");
+		StringBuilder sb = new StringBuilder();
+
+		try {
+			FileInputStream fis = new FileInputStream(file);
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+
+			String line;
+
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+			}
+
+			br.close();
+			fis.close();
+			// Здесь можно выполнить какую-либо обработку содержимого файла
+
+		} catch (IOException e) {
+			Toast.makeText(thiz, e.getMessage(), Toast.LENGTH_LONG).show();
+		}
+
+		String fileContent = sb.toString();
+		
+		/*accelerationX = getAccelerateX(fileContent);
+		accelerationY = getAccelerateY(fileContent);
+		accelerationWidth = getAccelerateWidth(fileContent);
+		accelerationHeight = getAccelerateHeight(fileContent);
+		
+		brakesX = getBrakesX(fileContent);
+		brakesY = getBrakesY(fileContent);
+		brakesWidth = getBrakesWidth(fileContent);
+		brakesHeight = getBrakesHeight(fileContent);*/
+	}
+	
+	// TODO: Release touch listener
+	// for JoyStick, Acceleration and Brakes
+	
+	boolean JoystickIsPressed = false;
+	boolean accelerateIsPressed = false;
+	boolean brakesIsPressed = false;
+	
+	int JoystickTouchNum = -1;
+	int RightSpaceTouchNum = -1;
+	int startX, startY, outerX, outerY, innerX, innerY;
+	double actuatorX, actuatorY;
+
+	private void setActuator()
+	{
+		double deltaX = innerX - outerX;
+		double deltaY = innerY - outerY;
+		double deltaDistance = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
+
+		if(deltaDistance < ((thiz.getDisplay().getHeight() / 2) * 0.8f) / 2) {
+			actuatorX = deltaX / ((thiz.getDisplay().getHeight() / 2) * 0.8f) / 2;
+			actuatorY = deltaY / ((thiz.getDisplay().getHeight() / 2) * 0.8f) / 2;
+		} else {
+			actuatorX = deltaX / deltaDistance;
+			actuatorY = deltaY / deltaDistance;
+		}
+	}
+	
+	private void resetActuator()
+	{
+		actuatorX = 0.0f;
+		actuatorY = 0.0f;
+	}
+	
+	boolean inJoystickZone(float x, float y)
+	{
+		float x1 = 0;
+		float y1 = thiz.getDisplay().getHeight() / 2;
+		
+		float width = thiz.getDisplay().getWidth() / 2;
+		
+		if(x < width && x > x1 && y > y1) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	boolean inAccelerateZone(float x, float y)
+	{
+		if(x > accelerationX && x < accelerationX + accelerationWidth)
+		{
+			if(y > accelerationY && y < accelerationY + accelerationHeight)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	boolean inBrakesZone(float x, float y)
+	{
+		if(x > brakesX && x < brakesX + brakesWidth)
+		{
+			if(y > brakesY && y < brakesY + brakesHeight)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void sendTouches(MotionEvent event)
+	{
+	    sendTouch(event.getActionMasked(), (int)event.getX(), (int)event.getY());
+	}
+	
+	public void touchListener(MotionEvent event/*, TextView tv*/)
+	{
+		int action = event.getActionMasked();
+		int pointersCount = event.getPointerCount();
+
+		// Обработка действий с касанием
+		switch(action) {
+			case MotionEvent.ACTION_DOWN:
+				// Обработка начала касаний
+				// one touch, первое касание
+				int pointerIndex = event.getActionIndex();
+				int pointerId = event.getPointerId(pointerIndex);
+
+				if(inJoystickZone(event.getX(pointerIndex), event.getY(pointerIndex)) && !JoystickIsPressed)
+				{
+					JoystickIsPressed = true;
+					JoystickTouchNum = pointerId;
+					outerX = innerX = startX = (int)event.getX(pointerIndex);
+					outerY = innerY = startY = (int)event.getY(pointerIndex);
+					return;
+				}
+
+				if(inAccelerateZone(event.getX(pointerIndex), event.getY(pointerIndex)))
+				{
+					accelerateIsPressed = true;
+					RightSpaceTouchNum = pointerId;
+					turnAccelerate(true);
+					return;
+				}
+
+				if(inBrakesZone(event.getX(pointerIndex), event.getY(pointerIndex)))
+				{
+					brakesIsPressed = true;
+					RightSpaceTouchNum = pointerId;
+					turnBrakes(true);
+					return;
+				}
+				break;
+			case MotionEvent.ACTION_POINTER_DOWN:
+				// Обработка начала дополнительного касания
+				pointerIndex = event.getActionIndex();
+				pointerId = event.getPointerId(pointerIndex);
+				
+				if(inJoystickZone(event.getX(pointerIndex), event.getY(pointerIndex)) && !JoystickIsPressed)
+				{
+					JoystickIsPressed = true;
+					JoystickTouchNum = pointerId;
+					outerX = innerX = startX = (int)event.getX(pointerIndex);
+					outerY = innerY = startY = (int)event.getY(pointerIndex);
+					return;
+				}
+
+				if(inAccelerateZone(event.getX(pointerIndex), event.getY(pointerIndex)))
+				{
+					accelerateIsPressed = true;
+					RightSpaceTouchNum = pointerId;
+					turnAccelerate(true);
+					return;
+				}
+
+				if(inBrakesZone(event.getX(pointerIndex), event.getY(pointerIndex)))
+				{
+					brakesIsPressed = true;
+					RightSpaceTouchNum = pointerId;
+					turnBrakes(true);
+					return;
+				}
+				break;
+			case MotionEvent.ACTION_MOVE:
+				// Обработка движения пальцев по экрану
+				
+				for (int i = 0; i < pointersCount; i++) {
+					int currentPointerId = event.getPointerId(i); // Получить идентификатор пальца
+					float x = event.getX(i); // Получить X-координату пальца
+					float y = event.getY(i); // Получить Y-координату пальца
+					// Дополнительные действия при движении пальца
+					if(currentPointerId == JoystickTouchNum)
+					{
+						// update joystick actuators
+						if(x < thiz.getDisplay().getWidth() * 0.55f && x != 0)
+						{
+							innerX = (int)x;
+							innerY = (int)y;
+							setActuator();
+							updateActuator(actuatorX, actuatorY);
+							continue;
+						}
+					}
+					
+					if(currentPointerId == RightSpaceTouchNum)
+					{
+						if(inAccelerateZone(x, y))
+						{
+							accelerateIsPressed = true;
+							turnAccelerate(true);
+						} else {
+							accelerateIsPressed = false;
+							turnAccelerate(false);
+						}
+
+						if(inBrakesZone(x, y))
+						{
+							brakesIsPressed = true;
+							turnBrakes(true);
+						} else {
+							brakesIsPressed = false;
+							turnBrakes(false);
+						}
+					}
+				}
+				break;
+			case MotionEvent.ACTION_POINTER_UP:
+				// Обработка завершения касания
+				pointerIndex = event.getActionIndex();
+				pointerId = event.getPointerId(pointerIndex);
+				// Дополнительные действия при завершении касания
+				if(pointerId == JoystickTouchNum)
+				{
+					JoystickTouchNum = -1;
+					JoystickIsPressed = false;
+					outerX = outerY = innerX = innerY = startX = startY = 0;
+					resetActuator();
+					updateActuator(actuatorX, actuatorY);
+					break;
+				}
+				
+				if(pointerId == RightSpaceTouchNum)
+				{
+					if(accelerateIsPressed/* && inAccelerateZone(event.getX(pointerIndex), event.getY(pointerIndex))*/)
+					{
+						accelerateIsPressed = false;
+						turnAccelerate(false);
+					}
+
+					if(brakesIsPressed/* inBrakesZone(event.getX(pointerIndex), event.getY(pointerIndex))*/)
+					{
+						brakesIsPressed = false;
+						turnBrakes(false);
+					}
+				}
+				break;
+			case MotionEvent.ACTION_UP:
+				// Обработка завершения касания
+				
+				pointerIndex = event.getActionIndex();
+				pointerId = event.getPointerId(pointerIndex);
+				// Доп. действия при завершении касания
+				if(pointerId == JoystickTouchNum)
+				{
+					JoystickTouchNum = -1;
+					JoystickIsPressed = false;
+					outerX = outerY = innerX = innerY = startX = startY = 0;
+					resetActuator();
+					updateActuator(actuatorX, actuatorY);
+				}
+
+				if(pointerId == RightSpaceTouchNum)
+				{
+					if(accelerateIsPressed/* && inAccelerateZone(event.getX(pointerIndex), event.getY(pointerIndex))*/)
+					{
+						accelerateIsPressed = false;
+						turnAccelerate(false);
+					}
+
+					if(brakesIsPressed/* inBrakesZone(event.getX(pointerIndex), event.getY(pointerIndex))*/)
+					{
+						brakesIsPressed = false;
+						turnBrakes(false);
+					}
+				}
+				break;
+		}
+	}
+	
+	native void updateActuator(double x, double y);
+	native void turnAccelerate(boolean turn);
+	native void turnBrakes(boolean turn);
+	native float getAccelerateX(String str);
+	native float getAccelerateY(String str);
+	native float getAccelerateWidth(String str);
+	native float getAccelerateHeight(String str);
+	native float getBrakesX(String str);
+	native float getBrakesY(String str);
+	native float getBrakesWidth(String str);
+	native float getBrakesHeight(String str);
+	public native void sendTouch(int type, int x, int y);
+	
+	static {
+		System.loadLibrary("oneshot");
+	}
+}
