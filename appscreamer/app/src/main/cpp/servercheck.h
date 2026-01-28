@@ -1,8 +1,0 @@
-//
-// Created by n on 14.09.2025.
-//
-
-#ifndef APPSCREAMER_SERVERCHECK_H
-#define APPSCREAMER_SERVERCHECK_H
-
-#endif //APPSCREAMER_SERVERCHECK_H
