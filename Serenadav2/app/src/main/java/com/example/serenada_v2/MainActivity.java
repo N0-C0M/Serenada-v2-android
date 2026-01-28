@@ -18,7 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
 
-    private WebView webView;
+    private WebView webView; 
 
 
     private final String URL = "https://serenada-app.ru/";
