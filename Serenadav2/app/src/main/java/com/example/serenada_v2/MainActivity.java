@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
     private final String URL = "https://serenada-app.ru/";
 
-    // Для загрузки файлов (Input type file)
+    // Input type file
     private ValueCallback<Uri[]> fileUploadCallback;
     private final ActivityResultLauncher<String> fileChooserLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(),
@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDatabaseEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // --- СОХРАНЕНИЕ СЕССИИ (COOKIES) ---
+        // --- COOKIES ---
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
@@ -93,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // --- ЛОГИКА СКАЧИВАНИЯ ФАЙЛОВ НА ТЕЛЕФОН ---
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
             try {
                 DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
@@ -105,7 +104,6 @@ public class MainActivity extends AppCompatActivity {
                 request.setTitle(filename);
                 request.setDescription("Скачивание файла...");
 
-                // Сохраняем в папку Downloads
                 request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                 request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
 
@@ -128,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Сохранение состояния WebView при повороте экрана
+
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
