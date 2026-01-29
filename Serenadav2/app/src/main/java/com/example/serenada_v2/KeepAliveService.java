@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import androidx.annotation.Nullable;
@@ -22,48 +23,46 @@ public class KeepAliveService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Serenada запущена")
-                .setContentText("Приложение активно для приема звонков")
+                .setContentTitle("Serenada активна")
+                .setContentText("Фоновый режим звонков включен")
                 .setSmallIcon(android.R.drawable.ic_menu_call)
                 .setContentIntent(pendingIntent)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true) // Чтобы пользователь не мог смахнуть
                 .build();
 
-
-        startForeground(1, notification);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // Для Android 14 и 15
+                startForeground(1, notification,
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE |
+                                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+            } else {
+                startForeground(1, notification);
+            }
+        } catch (Exception e) {
+            // Если система все еще блокирует (например, не получены права Android)
+            e.printStackTrace();
+            stopSelf();
+        }
 
         return START_STICKY;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-    }
-
     @Nullable
     @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
+    public IBinder onBind(Intent intent) { return null; }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Serenada Background Service",
-                    NotificationManager.IMPORTANCE_LOW
-            );
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID, "Background Service", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(serviceChannel);
-            }
+            if (manager != null) manager.createNotificationChannel(channel);
         }
     }
 }
