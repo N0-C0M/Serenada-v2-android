@@ -32,12 +32,12 @@ public class KeepAliveService extends Service {
                 .setContentText("Фоновый режим звонков включен")
                 .setSmallIcon(android.R.drawable.ic_menu_call)
                 .setContentIntent(pendingIntent)
-                .setOngoing(true) // Чтобы пользователь не мог смахнуть
+                .setOngoing(true)
                 .build();
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                // Для Android 14 и 15
+
                 startForeground(1, notification,
                         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE |
                                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
@@ -45,7 +45,7 @@ public class KeepAliveService extends Service {
                 startForeground(1, notification);
             }
         } catch (Exception e) {
-            // Если система все еще блокирует (например, не получены права Android)
+
             e.printStackTrace();
             stopSelf();
         }

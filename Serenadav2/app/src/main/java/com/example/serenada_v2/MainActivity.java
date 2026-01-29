@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                // Автоматически разрешаем доступ к камере/микрофону
+
                 runOnUiThread(() -> {
                     try {
                         request.grant(request.getResources());
